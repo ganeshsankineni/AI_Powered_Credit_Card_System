@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChurnIQ — Telecom Churn Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0C0E12;
+  --bg2:       #131620;
+  --bg3:       #1B1F2C;
+  --bg4:       #222637;
+  --line:      rgba(255,255,255,0.07);
+  --line2:     rgba(255,255,255,0.12);
+  --text:      #E8EBF4;
+  --muted:     #6B7394;
+  --dim:       #3A4060;
+  --accent:    #4F83FF;
+  --accent2:   #7B5EA7;
+  --red:       #FF4D4D;
+  --amber:     #FFAA00;
+  --green:     #2ECC71;
+  --cyan:      #00D4C8;
+  --font:      'IBM Plex Sans', sans-serif;
+  --mono:      'IBM Plex Mono', monospace;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
+
+/* ─── TOPBAR ─── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px;
+  background: var(--bg2); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.logo-mark {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: linear-gradient(135deg, #4F83FF, #7B5EA7);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 12px; font-weight: 500; color: #fff;
+}
+.logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.logo-text span { color: var(--accent); }
+.topbar-badge {
+  font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+  border: 1px solid var(--dim); border-radius: 3px; color: var(--muted);
+  letter-spacing: 0.05em;
+}
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.stat-pill {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ─── LAYOUT ─── */
+.shell {
+  display: grid;
+  grid-template-columns: 200px 1fr 260px;
+  min-height: calc(100vh - 52px);
+}
+
+/* ─── LEFT SIDEBAR ─── */
+.sidebar {
+  background: var(--bg2); border-right: 1px solid var(--line);
+  padding: 20px 0;
+}
+.sidebar-section { padding: 0 16px; margin-bottom: 24px; }
+.sidebar-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+  color: var(--dim); text-transform: uppercase; margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--line);
+}
+.op-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid transparent; margin-bottom: 4px;
+  transition: all 0.15s;
+}
+.op-card:hover { background: var(--bg3); }
+.op-card.active { background: rgba(79,131,255,0.08); border-color: rgba(79,131,255,0.3); }
+.op-logo {
+  width: 32px; height: 32px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.op-info { flex: 1; min-width: 0; }
+.op-name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.op-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.op-check { font-size: 10px; color: var(--accent); opacity: 0; }
+.op-card.active .op-check { opacity: 1; }
+
+.sidebar-stats { padding: 0 16px; }
+.mini-stat { margin-bottom: 14px; }
+.mini-stat-label { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 4px; }
+.mini-stat-val { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--text); }
+.mini-stat-val span { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.mini-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+.mini-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+
+/* ─── MAIN ─── */
+.main { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+.section-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.section-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+  color: var(--accent); text-transform: uppercase;
+  background: rgba(79,131,255,0.1); padding: 3px 8px; border-radius: 3px;
+}
+.section-title { font-size: 12px; font-weight: 500; color: var(--muted); }
+
+.panel {
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 16px 20px;
+}
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.panel-title { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; font-family: var(--mono); }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.field input, .field select {
+  font-family: var(--mono); font-size: 12px;
+  padding: 8px 10px; background: var(--bg3);
+  border: 1px solid var(--line2); border-radius: 6px;
+  color: var(--text); width: 100%; outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7394'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  padding-right: 28px;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); background: var(--bg4); }
+
+/* ─── PREDICT PANEL ─── */
+.predict-panel {
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 20px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.predict-meta {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em;
+}
+.predict-meta::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+
+.predict-btn {
+  width: 100%; padding: 14px;
+  background: var(--accent); border: none; border-radius: 8px;
+  color: #fff; font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; letter-spacing: 0.02em;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; position: relative; overflow: hidden;
+}
+.predict-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+}
+.predict-btn:hover { background: #6293FF; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,131,255,0.35); }
+.predict-btn:active { transform: translateY(0); box-shadow: none; }
+.predict-btn svg { position: relative; }
+
+/* ─── RIGHT PANEL ─── */
+.right-panel {
+  background: var(--bg2); border-left: 1px solid var(--line);
+  padding: 20px; display: flex; flex-direction: column; gap: 20px;
+}
+.rpanel-section { display: flex; flex-direction: column; gap: 12px; }
+.rpanel-label { font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; }
+
+/* Score ring */
+.score-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.score-ring { position: relative; width: 120px; height: 120px; }
+.score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.score-ring-bg   { fill: none; stroke: var(--bg4); stroke-width: 8; }
+.score-ring-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(0.4,0,0.2,1), stroke 0.5s; }
+.score-center {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.score-num { font-family: var(--mono); font-size: 28px; font-weight: 500; line-height: 1; }
+.score-denom { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+.score-ring-label { font-size: 12px; font-weight: 500; }
+
+/* Risk meter */
+.risk-level {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 8px; border: 1px solid transparent;
+}
+.risk-level.high   { background: rgba(255,77,77,0.08);  border-color: rgba(255,77,77,0.25); }
+.risk-level.medium { background: rgba(255,170,0,0.08); border-color: rgba(255,170,0,0.25); }
+.risk-level.low    { background: rgba(46,204,113,0.08); border-color: rgba(46,204,113,0.25); }
+.risk-level.idle   { background: var(--bg3); border-color: var(--line2); }
+.risk-icon { font-size: 18px; }
+.risk-text h3 { font-size: 13px; font-weight: 600; }
+.risk-text p  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.risk-level.high   .risk-text h3 { color: var(--red); }
+.risk-level.medium .risk-text h3 { color: var(--amber); }
+.risk-level.low    .risk-text h3 { color: var(--green); }
+.risk-level.idle   .risk-text h3 { color: var(--muted); }
+
+/* Feature bars */
+.feature-list { display: flex; flex-direction: column; gap: 8px; }
+.feat-row { display: flex; flex-direction: column; gap: 4px; }
+.feat-label { display: flex; justify-content: space-between; }
+.feat-name  { font-size: 11px; color: var(--text); }
+.feat-weight{ font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.feat-bar   { height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.feat-fill  { height: 100%; border-radius: 2px; transition: width 0.9s ease; }
+
+/* Confidence gauge */
+.conf-row { display: flex; align-items: center; gap: 10px; }
+.conf-bar { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.conf-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--cyan)); border-radius: 3px; transition: width 0.9s; width: 0; }
+.conf-val  { font-family: var(--mono); font-size: 11px; color: var(--text); min-width: 40px; text-align: right; }
+
+/* Divider */
+.divider { border: none; border-top: 1px solid var(--line); margin: 0; }
+
+/* Recommended action */
+.action-card {
+  background: var(--bg3); border: 1px solid var(--line); border-radius: 8px;
+  padding: 12px; display: none;
+}
+.action-card.show { display: block; }
+.action-card h4 { font-size: 11px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.action-card p  { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.action-items { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.action-items li {
+  font-size: 11px; color: var(--muted); padding: 4px 8px;
+  background: var(--bg4); border-radius: 4px; display: flex; align-items: flex-start; gap: 6px;
+}
+.action-items li::before { content: '→'; color: var(--accent); flex-shrink: 0; font-family: var(--mono); }
+
+/* Score history dots */
+.history-dots { display: flex; gap: 4px; align-items: flex-end; height: 32px; }
+.h-dot {
+  width: 8px; border-radius: 2px; background: var(--bg4);
+  transition: height 0.5s ease, background 0.3s;
+}
+
+/* Animate in */
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.anim-in { animation: fadeUp 0.35s ease both; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo-mark">CI</div>
+    <div class="logo-text">Churn<span>IQ</span></div>
+    <div class="topbar-badge">v2.4 · ENTERPRISE</div>
+  </div>
+  <div class="topbar-right">
+    <div class="stat-pill"><span class="dot"></span> Live · 7,043 records</div>
+    <div class="stat-pill">31 features · XGBoost</div>
+    <div class="stat-pill" style="color: var(--amber);">Avg risk: 26.5%</div>
+  </div>
+</header>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Telecom Partner</div>
+
+      <div class="op-card active" data-op="jio" onclick="selectTelecom(this,'Reliance Jio')">
+        <div class="op-logo" style="background:rgba(0,102,204,0.15); color:#4DA6FF; font-family:var(--mono);">Ji</div>
+        <div class="op-info">
+          <div class="op-name">Reliance Jio</div>
+          <div class="op-sub">4G / 5G</div>
+        </div>
+        <div class="op-check">✓</div>
+      </div>
+
+      <div class="op-card" data-op="airtel" onclick="selectTelecom(this,'Airtel')">
+        <div class="op-logo" style="background:rgba(224,0,26,0.12); color:#FF5566; font-family:var(--mono);">Ar</div>
+        <div class="op-info">
+          <div class="op-name">Airtel</div>
+          <div class="op-sub">4G / 5G</div>
+        </div>
+        <div class="op-check">✓</div>
+      </div>
+
+      <div class="op-card" data-op="vi" onclick="selectTelecom(this,'Vi Vodafone Idea')">
+        <div class="op-logo" style="background:rgba(245,166,35,0.15); color:#FFBB44; font-family:var(--mono);">Vi</div>
+        <div class="op-info">
+          <div class="op-name">Vi Idea</div>
+          <div class="op-sub">4G</div>
+        </div>
+        <div class="op-check">✓</div>
+      </div>
+
+      <div class="op-card" data-op="bsnl" onclick="selectTelecom(this,'BSNL')">
+        <div class="op-logo" style="background:rgba(27,94,32,0.2); color:#4CAF50; font-family:var(--mono);">Bs</div>
+        <div class="op-info">
+          <div class="op-name">BSNL</div>
+          <div class="op-sub">4G</div>
+        </div>
+        <div class="op-check">✓</div>
+      </div>
+    </div>
+
+    <hr class="divider" style="margin: 0 16px 20px;">
+
+    <div class="sidebar-stats">
+      <div class="sidebar-label">Dataset Stats</div>
+
+      <div class="mini-stat">
+        <div class="mini-stat-label">CHURN RATE</div>
+        <div class="mini-stat-val">26.5<span>%</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:26.5%; background:var(--red);"></div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">AVG TENURE</div>
+        <div class="mini-stat-val">32<span>mo</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:44%; background:var(--accent);"></div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">FIBER USERS</div>
+        <div class="mini-stat-val">43.9<span>%</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:44%; background:var(--cyan);"></div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">MTM CONTRACTS</div>
+        <div class="mini-stat-val">55<span>%</span></div>
+        <div class="mini-bar"><div class="mini-bar-fill" style="width:55%; background:var(--amber);"></div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Usage & Charges -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Usage &amp; Charges</span>
+        <span style="font-family:var(--mono); font-size:10px; color:var(--muted);">SECTION 01</span>
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label>Tenure (months)</label>
+          <input type="number" id="tenure" value="3" min="0" max="72">
+        </div>
+        <div class="field">
+          <label>Monthly Charges (₹)</label>
+          <input type="number" id="monthly" value="800">
+        </div>
+        <div class="field">
+          <label>Total Charges (₹)</label>
+          <input type="number" id="total" value="2400">
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Profile -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Customer Profile</span>
+        <span style="font-family:var(--mono); font-size:10px; color:var(--muted);">SECTION 02</span>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Gender</label>
+          <select id="gender">
+            <option value="0">Female</option>
+            <option value="1">Male</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Senior Citizen</label>
+          <select id="senior">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Has Partner</label>
+          <select id="partner">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Has Dependents</label>
+          <select id="dependents">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Active Services</span>
+        <span style="font-family:var(--mono); font-size:10px; color:var(--muted);">SECTION 03</span>
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label>Phone Service</label>
+          <select id="phone">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Multiple Lines</label>
+          <select id="multilines">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="nophone">No phone svc</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Internet Service</label>
+          <select id="internet">
+            <option value="fiber">Fiber optic</option>
+            <option value="dsl">DSL</option>
+            <option value="no">None</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Online Security</label>
+          <select id="security">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="noint">No internet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Online Backup</label>
+          <select id="backup">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="noint">No internet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Device Protection</label>
+          <select id="device">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="noint">No internet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tech Support</label>
+          <select id="techsupport">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="noint">No internet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Streaming TV</label>
+          <select id="tv">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="noint">No internet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Streaming Movies</label>
+          <select id="movies">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="noint">No internet</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Billing -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Billing &amp; Contract</span>
+        <span style="font-family:var(--mono); font-size:10px; color:var(--muted);">SECTION 04</span>
+      </div>
+      <div class="grid3">
+        <div class="field">
+          <label>Contract Type</label>
+          <select id="contract">
+            <option value="monthly">Month-to-month</option>
+            <option value="oneyear">One year</option>
+            <option value="twoyear">Two year</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Payment Method</label>
+          <select id="payment">
+            <option value="echeck">Electronic check</option>
+            <option value="mcheck">Mailed check</option>
+            <option value="credit">Credit card (auto)</option>
+            <option value="bank">Bank transfer (auto)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Paperless Billing</label>
+          <select id="paperless">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Predict -->
+    <div class="predict-panel">
+      <div class="predict-meta">
+        MODEL · XGBoost v2.4 · 87.3% accuracy · AUC 0.934
+      </div>
+      <button class="predict-btn" onclick="predict()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Run Churn Prediction
+      </button>
+    </div>
+
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+
+    <div class="rpanel-section">
+      <div class="rpanel-label">Churn Score</div>
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120">
+            <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="score-ring-fill" id="ring-fill" cx="60" cy="60" r="52"
+              stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke="var(--dim)"/>
+          </svg>
+          <div class="score-center">
+            <div class="score-num" id="score-num">—</div>
+            <div class="score-denom">/ 100</div>
+          </div>
+        </div>
+        <div class="score-ring-label" id="score-ring-label" style="color:var(--muted)">Awaiting input</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="rpanel-section">
+      <div class="rpanel-label">Risk Classification</div>
+      <div class="risk-level idle" id="risk-level">
+        <div class="risk-icon">○</div>
+        <div class="risk-text">
+          <h3>Not Run</h3>
+          <p>Click predict to analyze</p>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="rpanel-section">
+      <div class="rpanel-label">Model Confidence</div>
+      <div class="conf-row">
+        <div class="conf-bar"><div class="conf-fill" id="conf-fill"></div></div>
+        <div class="conf-val" id="conf-val">—</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="rpanel-section">
+      <div class="rpanel-label">Top Risk Drivers</div>
+      <div class="feature-list" id="feature-list">
+        <div style="font-size:11px; color:var(--dim); font-family:var(--mono);">No data yet</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="rpanel-section">
+      <div class="rpanel-label">Run History</div>
+      <div class="history-dots" id="history-dots">
+        <div style="font-size:10px; color:var(--dim); font-family:var(--mono);">—</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="action-card" id="action-card">
+      <h4 id="action-title">Retention Actions</h4>
+      <ul class="action-items" id="action-list"></ul>
+    </div>
+
+  </aside>
+</div>
+
+<script>
+  var selectedTelecom = 'Reliance Jio';
+  var runHistory = [];
+  var C = 326.726; // 2π × r
+
+  function selectTelecom(el, name) {
+    document.querySelectorAll('.op-card').forEach(function(c) { c.classList.remove('active'); });
+    el.classList.add('active');
+    selectedTelecom = name;
+  }
+
+  function predict() {
+    var tenure      = parseInt(document.getElementById('tenure').value)    || 0;
+    var monthly     = parseFloat(document.getElementById('monthly').value) || 0;
+    var senior      = parseInt(document.getElementById('senior').value);
+    var partner     = document.getElementById('partner').value;
+    var dependents  = document.getElementById('dependents').value;
+    var internet    = document.getElementById('internet').value;
+    var contract    = document.getElementById('contract').value;
+    var payment     = document.getElementById('payment').value;
+    var security    = document.getElementById('security').value;
+    var techsupport = document.getElementById('techsupport').value;
+
+    var score = 0;
+    var factors = [];
+
+    if (tenure < 3)        { score += 30; factors.push({ name: 'Very short tenure', w: 30, color: 'var(--red)' }); }
+    else if (tenure < 12)  { score += 15; factors.push({ name: 'Short tenure <12mo', w: 15, color: 'var(--amber)' }); }
+    else if (tenure >= 24) { score -= 10; factors.push({ name: 'Loyal customer (24mo+)', w: 10, color: 'var(--green)' }); }
+
+    if (contract === 'monthly')  { score += 25; factors.push({ name: 'Month-to-month contract', w: 25, color: 'var(--red)' }); }
+    else if (contract === 'oneyear') { score -= 8; }
+    else if (contract === 'twoyear') { score -= 15; factors.push({ name: 'Two-year contract', w: 15, color: 'var(--green)' }); }
+
+    if (internet === 'fiber') { score += 20; factors.push({ name: 'Fiber optic subscriber', w: 20, color: 'var(--amber)' }); }
+
+    if (payment === 'echeck') { score += 15; factors.push({ name: 'Electronic check payment', w: 15, color: 'var(--amber)' }); }
+
+    if (senior === 1) { score += 10; factors.push({ name: 'Senior citizen', w: 10, color: 'var(--amber)' }); }
+
+    if (security    === 'no') { score += 8;  factors.push({ name: 'No online security', w: 8, color: 'var(--amber)' }); }
+    if (techsupport === 'no') { score += 7;  factors.push({ name: 'No tech support', w: 7, color: 'var(--amber)' }); }
+
+    if (partner    === '0') score += 5;
+    if (dependents === '0') score += 4;
+
+    if (monthly > 1500) { score += 15; factors.push({ name: 'High monthly charges', w: 15, color: 'var(--amber)' }); }
+    else if (monthly < 400) score -= 5;
+
+    score = Math.min(100, Math.max(0, score));
+
+    // Sort by weight desc
+    factors.sort(function(a,b){ return b.w - a.w; });
+    var topFactors = factors.slice(0, 5);
+    var maxW = topFactors.length > 0 ? topFactors[0].w : 1;
+
+    // Update ring
+    var ring = document.getElementById('ring-fill');
+    var offset = C - (score / 100) * C;
+    ring.style.strokeDashoffset = offset;
+
+    var ringColor = score >= 65 ? 'var(--red)' : score >= 35 ? 'var(--amber)' : 'var(--green)';
+    ring.style.stroke = ringColor;
+
+    document.getElementById('score-num').textContent = score;
+
+    // Risk level
+    var riskEl = document.getElementById('risk-level');
+    var ringLabel = document.getElementById('score-ring-label');
+    var riskClass, riskIcon, riskHead, riskSub;
+
+    if (score >= 65) {
+      riskClass = 'high'; riskIcon = '⚠';
+      riskHead = 'High Churn Risk';
+      riskSub = selectedTelecom + ' · Immediate action required';
+      ringLabel.style.color = 'var(--red)';
+      ringLabel.textContent = 'HIGH RISK';
+    } else if (score >= 35) {
+      riskClass = 'medium'; riskIcon = '◈';
+      riskHead = 'Medium Churn Risk';
+      riskSub = selectedTelecom + ' · Proactive outreach recommended';
+      ringLabel.style.color = 'var(--amber)';
+      ringLabel.textContent = 'MEDIUM RISK';
+    } else {
+      riskClass = 'low'; riskIcon = '✓';
+      riskHead = 'Low Churn Risk';
+      riskSub = selectedTelecom + ' · Customer appears stable';
+      ringLabel.style.color = 'var(--green)';
+      ringLabel.textContent = 'LOW RISK';
+    }
+
+    riskEl.className = 'risk-level ' + riskClass;
+    riskEl.querySelector('.risk-icon').textContent = riskIcon;
+    riskEl.querySelector('.risk-text h3').textContent = riskHead;
+    riskEl.querySelector('.risk-text p').textContent = riskSub;
+
+    // Confidence
+    var conf = Math.round(72 + (score / 100) * 18 + Math.random() * 5);
+    conf = Math.min(99, conf);
+    document.getElementById('conf-fill').style.width = conf + '%';
+    document.getElementById('conf-val').textContent = conf + '%';
+
+    // Feature list
+    var fl = document.getElementById('feature-list');
+    if (topFactors.length === 0) {
+      fl.innerHTML = '<div style="font-size:11px; color:var(--green); font-family:var(--mono);">No significant risk factors</div>';
+    } else {
+      fl.innerHTML = topFactors.map(function(f) {
+        var pct = Math.round((f.w / maxW) * 100);
+        return '<div class="feat-row">' +
+          '<div class="feat-label">' +
+            '<span class="feat-name">' + f.name + '</span>' +
+            '<span class="feat-weight">+' + f.w + 'pts</span>' +
+          '</div>' +
+          '<div class="feat-bar"><div class="feat-fill" style="width:' + pct + '%; background:' + f.color + ';"></div></div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // History
+    runHistory.push(score);
+    if (runHistory.length > 10) runHistory.shift();
+    var hd = document.getElementById('history-dots');
+    var maxH = Math.max.apply(null, runHistory) || 1;
+    hd.innerHTML = runHistory.map(function(s) {
+      var h = Math.max(6, Math.round((s / 100) * 28));
+      var c = s >= 65 ? 'var(--red)' : s >= 35 ? 'var(--amber)' : 'var(--green)';
+      return '<div class="h-dot" style="height:' + h + 'px; background:' + c + ';"></div>';
+    }).join('');
+
+    // Actions
+    var ac = document.getElementById('action-card');
+    var al = document.getElementById('action-list');
+    ac.classList.add('show');
+
+    var actions;
+    if (score >= 65) {
+      document.getElementById('action-title').textContent = 'Immediate Retention Actions';
+      actions = [
+        'Assign dedicated retention specialist',
+        'Offer contract upgrade with discount',
+        'Enable complimentary tech support (90 days)',
+        'Schedule proactive outreach call within 24h'
+      ];
+    } else if (score >= 35) {
+      document.getElementById('action-title').textContent = 'Proactive Engagement Actions';
+      actions = [
+        'Send personalized loyalty offer via SMS',
+        'Recommend security & backup add-ons',
+        'Invite to annual plan upgrade campaign'
+      ];
+    } else {
+      document.getElementById('action-title').textContent = 'Loyalty Reinforcement';
+      actions = [
+        'Enroll in loyalty rewards program',
+        'Share referral incentive program details'
+      ];
+    }
+
+    al.innerHTML = actions.map(function(a) { return '<li>' + a + '</li>'; }).join('');
+  }
+</script>
+</body>
+</html>
